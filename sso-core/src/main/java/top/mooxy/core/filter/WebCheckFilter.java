@@ -1,0 +1,108 @@
+package top.mooxy.core.filter;
+
+import java.io.IOException;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+
+import top.mooxy.core.conf.RedirectParams;
+import top.mooxy.core.domain.User;
+import top.mooxy.core.enums.CookieEnum;
+import top.mooxy.core.enums.JWTCheckEnum;
+import top.mooxy.core.store.SsoLoginStore;
+import top.mooxy.core.utils.CheckUtil;
+import top.mooxy.core.utils.CookieUtil;
+
+/**
+* @author Mxy
+* @time 2018年5月28日 下午1:53:32
+* @description: webd登录校验器
+*/
+public class WebCheckFilter extends BaseCheckFilter {
+
+	@Override
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+			throws IOException, ServletException {
+		
+		super.doFilter(request, response, chain);
+		
+        if(uri.contains("/logOut")){
+        	rediectLogOut();
+        	return;
+        }
+        
+        if(uri.contains("/logout")){
+        	rediectLogOut();
+        	return;
+        }
+		
+		if(this.returnStatus){
+			this.returnStatus = false;
+			return;
+		}
+		
+		String token = CookieUtil.getValue(super.servletRequest, CookieEnum.TOKENKEY.getContent());
+		
+		//判断cookie是否存在
+		if(token==null){
+			rediectLogin();
+			return;
+		}
+
+		//判断jwt是否有效
+		
+		Integer checkJwt = CheckUtil.checkJwt(servletRequest,servletResponse,token,this.isClient);
+		
+		if(checkJwt==JWTCheckEnum.EXPORT.getCode()){
+			logger.info("【通用过滤器：】登录状态异常，重定向到登录接口！");
+			rediectLogin();
+			return;
+		}
+		
+		String newToken = (String) request.getAttribute("newToken");
+		
+		User user = SsoLoginStore.get((newToken==null || "".equals(newToken)?token:newToken));
+		
+		servletRequest.removeAttribute("token");
+		
+		if(user==null){
+			rediectLogin();
+			return;
+		}
+		
+		request.setAttribute("user", user);
+		
+		chain.doFilter(request, response);
+		
+		return;
+	}
+
+	private void rediectLogin() throws IOException {
+		//如果cookie等于空，则重定向到登录login
+		
+		if("false".equals(isClient)){
+			logger.info("【通用过滤器：】本地直连用户未登录，重定向到登录接口！");
+			servletResponse.sendRedirect(ssoServer+RedirectParams.LOGIN);
+		}
+		
+		if("true".equals(isClient)){
+			logger.info("【通用过滤器：】远程直连用户未登录，重定向到登录接口！");
+			servletResponse.sendRedirect(ssoServer+RedirectParams.LOGIN+"?"+RedirectParams.REDIRECT_URL+"="+url);
+		}
+	}
+	
+	private void rediectLogOut() throws IOException {
+		
+		if("false".equals(isClient)){
+			logger.info("【通用过滤器：】本地直连用户登出，重定向到登录页面！");
+			servletResponse.sendRedirect(ssoServer+RedirectParams.LOGOUT);
+		}
+		
+		if("true".equals(isClient)){
+			logger.info("【通用过滤器：】远程直连用户登出，重定向到登录页面！");
+			servletResponse.sendRedirect(ssoServer+RedirectParams.LOGOUT+"?"+RedirectParams.REDIRECT_URL+"="+ssoClient);
+		}
+	}
+}

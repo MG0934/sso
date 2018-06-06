@@ -1,0 +1,19 @@
+### web
+server.port=8081
+server.context-path=/ssoc
+
+### freemarker
+spring.freemarker.request-context-attribute=request
+spring.freemarker.cache=false
+
+### resource (default: /**  + classpath:/static/ )
+spring.mvc.static-path-pattern=/static/**
+spring.resources.static-locations=classpath:/static/
+
+### xxl-sso
+sso.server=http://localhost:8080/ssos
+sso.client=http://localhost:8081/ssoc/web/
+sso.isClient=true
+
+### redis
+redis.address=192.168.5.221:6379

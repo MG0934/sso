@@ -1,0 +1,69 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+  	<artifactId>sso-parent</artifactId>
+  	<groupId>top.mooxy.www</groupId>
+  	<version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <artifactId>sso-core</artifactId>
+  <name>sso-core</name>
+  <description>sso core file</description>
+  <dependencies>
+  
+			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<scope>test</scope>
+			</dependency>
+
+			<!-- servlet -->
+			<dependency>
+				<groupId>javax.servlet</groupId>
+				<artifactId>javax.servlet-api</artifactId>
+			</dependency>
+
+			<!-- slf4j -->
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+			</dependency>
+
+			<!-- jedis -->
+		<dependency>
+		    <groupId>redis.clients</groupId>
+		    <artifactId>jedis</artifactId>
+		</dependency>
+
+			<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt -->
+			<dependency>
+				<groupId>io.jsonwebtoken</groupId>
+				<artifactId>jjwt</artifactId>
+			</dependency>
+			
+		<dependency>
+		    <groupId>net.sf.json-lib</groupId>
+		    <artifactId>json-lib</artifactId>
+		    <classifier>jdk15</classifier>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+		</dependency>
+		
+		<dependency>
+		    <groupId>commons-codec</groupId>
+		    <artifactId>commons-codec</artifactId>
+		</dependency>
+		
+		<dependency>
+	    	<groupId>joda-time</groupId>
+	    	<artifactId>joda-time</artifactId>
+		</dependency>
+				<!--shiro -->
+		<dependency>
+			<groupId>org.apache.shiro</groupId>
+			<artifactId>shiro-core</artifactId>
+		</dependency>
+   </dependencies>
+</project>

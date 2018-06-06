@@ -1,0 +1,160 @@
+package top.mooxy.core.utils;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtBuilder;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.SignatureException;
+import io.jsonwebtoken.UnsupportedJwtException;
+import top.mooxy.core.enums.JWTCheckEnum;
+
+/**
+* @author Mxy
+* @time 2018年5月29日 上午9:21:31
+* @description: jwt工具类
+*/
+public class JWTUtil {
+	
+	private static final Logger logger = LoggerFactory.getLogger(JWTUtil.class);
+	
+	private static final String KEY = "top.mooxy.buchang";
+	
+	private static final String HEAD = "bearer";
+	
+	private static final Integer EXTIME = 180000;
+	
+	private static final Double THRESHOLD = 0.7;
+	
+	private static final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	
+	public static String createJwt(Claims claims){
+		
+		Date startTime  = new Date(System.currentTimeMillis());
+		
+		Date endTime = new Date(System.currentTimeMillis() + EXTIME);
+
+		//设置算法为HS256
+		SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
+		        JwtBuilder builder = Jwts.builder()
+		                .setHeaderParam("typ", "JWT")    //设置header
+		                .setHeaderParam("alg", "HS256")		//设置HS256
+		                .setClaims(claims)
+		                .setIssuedAt(startTime)//设置签发时间
+		                .setIssuer("sso-server") //签发者
+		                .setAudience("sso-client")//面向的用户
+		                .setExpiration(endTime)
+		                .signWith(signatureAlgorithm, KEY);    //签名，需要算法和key
+		        checkTime(startTime,endTime,"false");
+		 return  HEAD+builder.compact();
+	}
+	
+	public static Claims ParJwt(String jwt){
+		//处理jwt
+		jwt = jwt.substring(HEAD.length(),jwt.length());
+		
+		//获取claims
+		Claims claims;
+		try {
+			claims = Jwts.parser()
+			            .setSigningKey(KEY)     //此处的key要与之前创建的key一致
+			            .parseClaimsJws(jwt)
+			            .getBody();
+		} catch (Exception e) {
+			return null;
+		} 
+	    return claims;
+	}
+	
+	public static JWTCheckEnum checkJwt(String jwt,String isClient){
+		
+		Claims parJwt = ParJwt(jwt);
+		
+		if(parJwt==null){
+			return JWTCheckEnum.EXPORT;
+		}
+
+		Date issuedAt = parJwt.getIssuedAt();
+		
+		Date expiration = parJwt.getExpiration();
+		
+		if(issuedAt==null || expiration== null){
+			return JWTCheckEnum.RELET;
+		}
+		
+		if(checkTime(issuedAt, expiration,isClient)){
+			
+			return JWTCheckEnum.NORMAL;
+			
+		}
+		return JWTCheckEnum.RELET;
+	}
+	
+	public static boolean checkTime(Date startTime,Date exTime,String isClient){
+		//获得当前时间
+		Date now = new Date();
+		
+		Calendar instance = Calendar.getInstance();
+		
+		instance.setTime(startTime);
+		
+		Double exString = EXTIME * THRESHOLD;
+		
+		String exTimeString = exString.toString(); 
+        
+        String strNum = exTimeString.substring(0,exTimeString.lastIndexOf("."));
+       
+        int num = Integer.valueOf(strNum);
+		
+		instance.add(Calendar.MILLISECOND,num);
+		//获得阀值时间
+		Date checkTime = instance.getTime();
+		
+		if("false".equals(isClient)){
+		
+			logger.info("【登录状态检查】:账户签发时间，"+format.format(startTime));
+		
+			logger.info("【登录状态检查】:账户阀值时间，"+format.format(checkTime));
+		
+			logger.info("【登录状态检查】:账户逾期时间，"+format.format(exTime));
+		
+		}
+		
+		//正常反true
+		if(now.after(startTime) && now.before(checkTime)){
+			return true;
+		}
+		
+		//需要续期返回 false
+		if(now.after(checkTime) && now.before(exTime)){
+
+			return false;
+		}
+		
+		return false;
+	}
+	
+
+	
+	public static void main(String[] args) {
+    	Claims claims = Jwts.claims();
+    	
+    	claims.put("ID", "123");
+    	
+    	claims.put("auth","password");
+    	
+		String createJwt = JWTUtil.createJwt(claims);
+		
+		System.out.println(createJwt);
+		
+		JWTUtil.ParJwt(createJwt);
+	}
+}
